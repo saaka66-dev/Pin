@@ -3,6 +3,8 @@
 雲端任務測試
 [報修欄位表與範例資料](文件/報修欄位表.xlsx)
 
+[報修系統操作說明（Word）](文件/報修系統操作說明.docx)
+
 ## 網頁前端
 
 根目錄 `index.html` 為首頁，搭配 `style.css`、`app.js`、`config.js`；不需要建置或 npm 套件。透過 CDN 載入 supabase-js v2，使用公開 publishable key 連線。
