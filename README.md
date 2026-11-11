@@ -5,6 +5,8 @@
 
 [報修系統操作說明（Word）](文件/報修系統操作說明.docx)
 
+[報修登記系統提案（PowerPoint）](文件/報修登記系統提案.pptx)
+
 ## 網頁前端
 
 根目錄 `index.html` 為首頁，搭配 `style.css`、`app.js`、`config.js`；不需要建置或 npm 套件。透過 CDN 載入 supabase-js v2，使用公開 publishable key 連線。
