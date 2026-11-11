@@ -80,7 +80,15 @@
   }
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (submitting || !client || !form.reportValidity()) return;
+    if (submitting || !form.reportValidity()) return;
+    if (!navigator.onLine) {
+      message(formMessage, '目前離線，報修尚未送出。請恢復連線後再按送出；內容僅保留在目前頁面，關閉或重新載入會遺失。', 'error');
+      return;
+    }
+    if (!client) {
+      message(formMessage, '服務尚未連線，報修未送出。請確認網路後重新載入；重新載入前請先另行記下填寫內容。', 'error');
+      return;
+    }
     const values = new FormData(form);
     const payload = Object.fromEntries(['reporter_name', 'location', 'category', 'description', 'urgency'].map(key => [key, String(values.get(key) || '').trim()]));
     if (Object.values(payload).some(value => !value)) {
@@ -111,7 +119,6 @@
     refresh.addEventListener('click', loadRequests);
     loadRequests();
   } catch {
-    fields.disabled = true;
     refresh.disabled = true;
     message(formMessage, '服務初始化失敗，請檢查網路連線後重新載入頁面。', 'error');
     message(listMessage, '目前無法讀取報修紀錄。', 'error');
