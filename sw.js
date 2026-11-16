@@ -2,7 +2,7 @@
 // Bump this version whenever the application shell changes.
 // Prefix kept from the earlier repair app so its old caches are cleaned up on activate.
 const CACHE_PREFIX = `repair-shell:${self.registration.scope}:`;
-const CACHE_NAME = `${CACHE_PREFIX}v6`;
+const CACHE_NAME = `${CACHE_PREFIX}v7`;
 const SHELL = ['index.html', 'style.css', 'app.js', 'config.js', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 const assetUrls = new Set(SHELL.map(path => new URL(path, self.registration.scope).href));
 const INDEX_URL = new URL('index.html', self.registration.scope).href;
