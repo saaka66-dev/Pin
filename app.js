@@ -52,7 +52,8 @@
   const SUBMIT_LABEL = '記一筆 →';
   let client;
   let submitting = false;
-  let canEdit = false;
+  // 依使用者決定：不需登入即可修改與刪除（資料庫已開放 anon 修改、刪除）。
+  let canEdit = true;
   let editingId = null;
 
   const store = {
@@ -434,8 +435,6 @@
     const config = window.LEDGER_CONFIG;
     client = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'travel-ledger-auth' } });
     refresh.addEventListener('click', () => loadEntries());
-    // 登入狀態變化時（含頁面載入時還原的登入）更新權限；回呼內不直接 await 其他 Supabase 呼叫以免卡住。
-    client.auth.onAuthStateChange((_event, session) => { setTimeout(() => refreshAccount(session), 0); });
     loadEntries();
   } catch {
     refresh.disabled = true;
