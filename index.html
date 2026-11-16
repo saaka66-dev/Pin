@@ -8,8 +8,8 @@
   <link rel="icon" type="image/png" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="報修登記">
-  <title>報修登記</title>
+  <meta name="apple-mobile-web-app-title" content="記帳本">
+  <title>記帳本</title>
   <link rel="stylesheet" href="./style.css">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script defer src="./config.js"></script>
@@ -17,44 +17,56 @@
   <script defer src="./pwa.js"></script>
 </head>
 <body>
-  <header class="site-header"><div class="wrap brand"><span class="brand-icon" aria-hidden="true">＋</span> 報修服務 <span class="brand-note">讓每個問題，都有紀錄。</span></div></header>
+  <header class="site-header"><div class="wrap brand"><span class="brand-icon" aria-hidden="true">$</span> 記帳本 <span class="brand-note">每一筆，都清清楚楚。</span></div></header>
   <main class="wrap">
     <aside class="pwa-tools" aria-label="應用程式安裝與連線狀態">
-      <button type="button" id="install-button" class="secondary" hidden>安裝報修登記</button>
+      <button type="button" id="install-button" class="secondary" hidden>安裝記帳本</button>
       <p id="connection-message" class="message" role="status" aria-live="polite" hidden></p>
       <p id="pwa-message" class="message" role="status" aria-live="polite" hidden></p>
     </aside>
-    <section class="intro"><p class="eyebrow">REPAIR REQUEST</p><h1>報修登記</h1><p>發現問題了嗎？留下詳細資訊，讓後續處理更順利。</p></section>
+    <section class="intro"><p class="eyebrow">EXPENSE TRACKER</p><h1>記帳本</h1><p>隨手記下每筆收入與支出，月底不再對不起來。</p></section>
+
+    <section class="summary" aria-labelledby="summary-title">
+      <h2 id="summary-title" class="visually-hidden">本月統計</h2>
+      <div class="summary-card"><span>本月收入</span><strong id="sum-income" class="income">—</strong></div>
+      <div class="summary-card"><span>本月支出</span><strong id="sum-expense" class="expense">—</strong></div>
+      <div class="summary-card"><span>本月結餘</span><strong id="sum-balance">—</strong></div>
+    </section>
+
     <section class="panel" aria-labelledby="form-title">
-      <div class="section-heading"><h2 id="form-title">新增報修</h2><span>所有欄位皆為必填</span></div>
-      <form id="repair-form">
+      <div class="section-heading"><h2 id="form-title">新增一筆</h2><span>備註以外皆為必填</span></div>
+      <form id="entry-form">
         <fieldset id="form-fields">
-          <div class="form-grid">
-            <label>報修人<input name="reporter_name" required maxlength="100" autocomplete="name" placeholder="請輸入姓名"></label>
-            <label>地點或部門<input name="location" required maxlength="200" placeholder="例如：示範辦公室 3 樓"></label>
-            <label>類別<select name="category" required><option value="">請選擇類別</option><option>設備</option><option>網路</option><option>環境</option><option>其他</option></select></label>
-            <label>緊急程度<select name="urgency" required><option>低</option><option selected>中</option><option>高</option></select></label>
+          <div class="type-switch" role="radiogroup" aria-label="收支類型">
+            <label class="type-option"><input type="radio" name="entry_type" value="支出" checked> 支出</label>
+            <label class="type-option"><input type="radio" name="entry_type" value="收入"> 收入</label>
           </div>
-          <label class="description-label">問題說明<textarea name="description" required maxlength="5000" rows="5" placeholder="請描述問題、發生位置與影響情況…"></textarea></label>
-          <div class="form-bottom"><p>登記時間與處理狀態由系統自動建立。</p><button id="submit-button" type="submit">送出報修 <span aria-hidden="true">→</span></button></div>
+          <div class="form-grid">
+            <label>日期<input type="date" name="entry_date" required min="2000-01-01" max="2100-12-31"></label>
+            <label>金額（新台幣）<input type="number" name="amount" required min="1" max="10000000" step="1" inputmode="numeric" placeholder="例如：120"></label>
+            <label>類別<select name="category" required></select></label>
+            <label>付款方式<select name="payment_method" required><option>現金</option><option>信用卡</option><option>轉帳</option><option>行動支付</option></select></label>
+          </div>
+          <label class="description-label">備註（選填）<input name="note" maxlength="500" placeholder="例如：午餐便當"></label>
+          <div class="form-bottom"><p>登記時間由系統自動建立。記錯時請新增一筆相反的紀錄沖銷。</p><button id="submit-button" type="submit">記一筆 <span aria-hidden="true">→</span></button></div>
         </fieldset>
       </form>
       <p id="form-message" class="message" role="status" aria-live="polite" hidden></p>
-      <noscript>請開啟 JavaScript，才能送出報修與讀取清單。</noscript>
+      <noscript>請開啟 JavaScript，才能記帳與讀取清單。</noscript>
     </section>
+
     <section class="requests-section" aria-labelledby="list-title">
-      <div class="section-heading list-heading"><div><h2 id="list-title">最近報修</h2><p>最近 20 筆紀錄，依登記時間由新到舊排列。</p></div><button type="button" id="refresh-button" class="secondary">重新整理</button></div>
-      <div class="urgency-filters" role="group" aria-label="依緊急程度篩選">
-        <button type="button" class="filter-button" data-urgency="全部" aria-pressed="true">全部</button>
-        <button type="button" class="filter-button" data-urgency="高" aria-pressed="false">高</button>
-        <button type="button" class="filter-button" data-urgency="中" aria-pressed="false">中</button>
-        <button type="button" class="filter-button" data-urgency="低" aria-pressed="false">低</button>
+      <div class="section-heading list-heading"><div><h2 id="list-title">本月紀錄</h2><p id="list-note">依日期由新到舊排列。</p></div><button type="button" id="refresh-button" class="secondary">重新整理</button></div>
+      <div class="type-filters" role="group" aria-label="依收支類型篩選">
+        <button type="button" class="filter-button" data-type="全部" aria-pressed="true">全部</button>
+        <button type="button" class="filter-button" data-type="支出" aria-pressed="false">支出</button>
+        <button type="button" class="filter-button" data-type="收入" aria-pressed="false">收入</button>
       </div>
       <p id="filter-message" class="message" role="status" aria-live="polite" hidden></p>
-      <p id="list-message" class="message" role="status" aria-live="polite">正在載入報修紀錄…</p>
-      <ul id="request-list" class="request-list" aria-label="最近報修紀錄"></ul>
+      <p id="list-message" class="message" role="status" aria-live="polite">正在載入記帳紀錄…</p>
+      <ul id="entry-list" class="entry-list" aria-label="本月記帳紀錄"></ul>
     </section>
   </main>
-  <footer class="wrap">報修登記 · 請勿填入密碼或其他機密資訊。</footer>
+  <footer class="wrap">記帳本示範 · 資料為公開可讀，請勿填入真實財務或個人資訊。</footer>
 </body>
 </html>
