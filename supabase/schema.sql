@@ -56,3 +56,6 @@ CREATE POLICY ledger_entries_anon_insert
 
 -- 第五段：原子化完成建表、限制及授權，避免只有部分安全設定成功。
 COMMIT;
+
+-- 第六段：通知 Supabase API 重新讀取資料表結構，建表後網頁即可立即使用。
+NOTIFY pgrst, 'reload schema';

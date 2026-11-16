@@ -37,11 +37,11 @@ GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 
 
 - `manifest.webmanifest`、`pwa.js`、`sw.js` 與 `icons/` 提供安裝與頁面快取，路徑皆為相對路徑，支援 GitHub Pages 的 `/Pin/` 子路徑。
 - 離線只能開啟已快取的頁面；記帳資料不快取、不離線儲存、不補送。
-- 變更頁面資源時須提升 `sw.js` 的快取版本（目前 v2；沿用舊前綴以清除報修版快取）。
+- 變更頁面資源時須提升 `sw.js` 的快取版本（目前 v3；沿用舊前綴以清除報修版快取）。
 
 ## 驗證紀錄
 
 - `node --check app.js` 通過。
 - Chromium 以本機假 Supabase（不連線資料庫）驗證：切換收入／支出時類別選項正確；送出一筆虛構支出，寫入內容只含六個輸入欄位、顯示成功訊息、表單重設；本月統計正確更新；「收入」篩選只顯示收入；390px 寬度無水平捲動。
-- 尚未對實際 Supabase 執行 `schema.sql`，亦未驗證線上 RLS 與寫入。
+- 2026-11-16 檢查線上 Supabase：查詢 `ledger_entries` 回傳 `PGRST205`（找不到資料表），表示 `schema.sql` 尚未執行，這是送出失敗的原因。頁面現在會顯示「資料庫尚未建立記帳資料表」的提示。執行 `schema.sql` 後即可新增與讀取。
 - 截圖：`docs/ledger-mobile.png`、`docs/ledger-desktop.png`。

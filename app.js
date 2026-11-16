@@ -33,6 +33,16 @@
     node.hidden = !text;
   }
   function errorText(error) {
+    // PGRST205 / 42P01: the ledger table has not been created in Supabase yet.
+    if (error?.code === 'PGRST205' || error?.code === '42P01') {
+      return '資料庫尚未建立記帳資料表（ledger_entries）。請管理者在 Supabase SQL Editor 執行 supabase/schema.sql 後再試。';
+    }
+    if (error?.code === '42501') {
+      return '資料庫拒絕這項操作（權限不足）。請管理者確認已完整執行 supabase/schema.sql。';
+    }
+    if (error?.code === '23514') {
+      return '資料不符合欄位限制，請檢查類別、金額與付款方式。';
+    }
     return error?.message || '網路連線失敗，請稍後再試。';
   }
   function element(tag, className, text) {
