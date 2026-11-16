@@ -40,8 +40,20 @@
   let selectedCategory = '全部';
   let selectedTrip = null;
   let loadedEntries = null;
+  const cancelEdit = document.querySelector('#cancel-edit');
+  const formTitle = document.querySelector('#form-title');
+  const formHint = document.querySelector('#form-hint');
+  const accountStatus = document.querySelector('#account-status');
+  const loginToggle = document.querySelector('#login-toggle');
+  const logoutButton = document.querySelector('#logout-button');
+  const loginForm = document.querySelector('#login-form');
+  const loginFields = document.querySelector('#login-fields');
+  const loginMessage = document.querySelector('#login-message');
+  const SUBMIT_LABEL = '記一筆 →';
   let client;
   let submitting = false;
+  let canEdit = false;
+  let editingId = null;
 
   const store = {
     get(key) { try { return localStorage.getItem(`travel:${key}`); } catch { return null; } },
@@ -104,7 +116,31 @@
     const value = previewAmount();
     preview.textContent = value === null ? '—' : twd(value);
   }
+  function setEditing(entry) {
+    editingId = entry?.id ?? null;
+    formTitle.textContent = entry ? '編輯花費' : '記一筆花費';
+    formHint.textContent = entry ? `正在編輯 ${entry.expense_date} 的「${entry.category}」，儲存後台幣金額會重新計算。` : '登記時間與台幣金額由系統自動計算。退款時可輸入負數金額。';
+    submit.textContent = entry ? '儲存修改' : SUBMIT_LABEL;
+    cancelEdit.hidden = !entry;
+  }
+  function startEdit(entry) {
+    setEditing(entry);
+    form.elements.trip_name.value = entry.trip_name;
+    form.elements.expense_date.value = entry.expense_date;
+    const radio = [...form.elements.category].find(input => input.value === entry.category);
+    if (radio) radio.checked = true;
+    currencySelect.value = entry.currency;
+    amountInput.value = String(entry.amount);
+    rateInput.value = String(entry.exchange_rate);
+    form.elements.payment_method.value = entry.payment_method;
+    form.elements.note.value = entry.note;
+    updateCurrency({ keepRate: true });
+    message(formMessage, '');
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.elements.amount.focus({ preventScroll: true });
+  }
   function resetForm() {
+    setEditing(null);
     const trip = form.elements.trip_name.value;
     const currency = currencySelect.value;
     const payment = form.elements.payment_method.value;
@@ -173,6 +209,16 @@
       const time = Number.isNaN(created.getTime()) ? '時間未知' : created.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
       const trip = selectedTrip === ALL_TRIPS ? `${entry.trip_name} · ` : '';
       card.append(element('p', 'card-meta', `${trip}${entry.expense_date} · 登記於 ${time}（台北時間）`));
+      if (canEdit) {
+        const actions = element('div', 'card-actions', '');
+        const edit = element('button', 'secondary small', '編輯');
+        const remove = element('button', 'secondary small danger', '刪除');
+        edit.type = remove.type = 'button';
+        edit.addEventListener('click', () => startEdit(entry));
+        remove.addEventListener('click', () => deleteEntry(entry, remove));
+        actions.append(edit, remove);
+        card.append(actions);
+      }
       list.append(card);
     }
   }
@@ -192,7 +238,8 @@
     const visible = selectedCategory === '全部' ? entries : entries.filter(entry => entry.category === selectedCategory);
     render(visible);
     message(filterMessage, entries.length && !visible.length ? `這趟旅程沒有「${selectedCategory}」紀錄。` : '');
-    message(listMessage, loadedEntries.length ? '' : '還沒有花費紀錄，先在上方記一筆吧！');
+    if (!loadedEntries.length) message(listMessage, '還沒有花費紀錄，先在上方記一筆吧！');
+    else if (listMessage.className !== 'message success') message(listMessage, '');
   }
   tripView.addEventListener('change', () => {
     selectedTrip = tripView.value;
@@ -200,10 +247,10 @@
     applyView();
   });
 
-  async function loadEntries() {
+  async function loadEntries(showLoading = true) {
     refresh.disabled = true;
     list.setAttribute('aria-busy', 'true');
-    message(listMessage, '正在載入花費紀錄…');
+    if (showLoading) message(listMessage, '正在載入花費紀錄…');
     try {
       const { data, error } = await client.from('travel_expenses')
         .select('id,trip_name,expense_date,category,currency,amount,exchange_rate,twd_amount,payment_method,note,created_at')
@@ -214,6 +261,7 @@
       const truncated = loadedEntries.length >= LOAD_LIMIT;
       listNote.textContent = `依日期由新到舊排列${truncated ? `；僅載入最新 ${LOAD_LIMIT} 筆，統計可能不完整` : ''}。`;
       renderTrips();
+      if (showLoading) message(listMessage, '');
       if (!form.elements.trip_name.value && selectedTrip !== ALL_TRIPS) form.elements.trip_name.value = selectedTrip;
       if (currencySelect.value !== 'TWD' && !rateInput.value) updateCurrency();
       applyView();
@@ -225,6 +273,66 @@
       list.setAttribute('aria-busy', 'false');
     }
   }
+
+  async function deleteEntry(entry, button) {
+    const label = `${entry.expense_date}「${entry.category}」${twd(entry.twd_amount)}${entry.note ? `（${entry.note}）` : ''}`;
+    if (!window.confirm(`確定要刪除這筆嗎？\n${label}\n刪除後無法復原。`)) return;
+    button.disabled = true;
+    try {
+      const { data, error } = await client.from('travel_expenses').delete().eq('id', entry.id).select('id');
+      if (error) throw error;
+      if (!data?.length) throw new Error('沒有刪除任何資料，可能沒有編輯權限或資料已不存在。');
+      if (editingId === entry.id) resetForm();
+      message(listMessage, `已刪除 ${label}。`, 'success');
+      await loadEntries(false);
+    } catch (error) {
+      message(listMessage, `刪除失敗：${errorText(error)}`, 'error');
+      button.disabled = false;
+    }
+  }
+
+  // 帳號：登入後若在編輯者名單內，可修改與刪除。
+  async function refreshAccount(session) {
+    const email = session?.user?.email;
+    canEdit = false;
+    if (email) {
+      const { data, error } = await client.rpc('is_travel_editor');
+      canEdit = !error && data === true;
+    }
+    accountStatus.textContent = !email ? '未登入：可新增與查看；登入後可修改或刪除。'
+      : canEdit ? `已登入 ${email}：可修改或刪除紀錄。` : `已登入 ${email}，但不在編輯者名單內，無法修改或刪除。`;
+    loginToggle.hidden = Boolean(email);
+    logoutButton.hidden = !email;
+    if (email) loginForm.hidden = true;
+    if (!canEdit && editingId) resetForm();
+    applyView();
+  }
+  loginToggle.addEventListener('click', () => {
+    loginForm.hidden = !loginForm.hidden;
+    if (!loginForm.hidden) loginForm.elements.email.focus();
+  });
+  loginForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!client) return;
+    loginFields.disabled = true;
+    message(loginMessage, '登入中…');
+    try {
+      const { error } = await client.auth.signInWithPassword({ email: loginForm.elements.email.value.trim(), password: loginForm.elements.password.value });
+      if (error) throw error;
+      loginForm.reset();
+      message(loginMessage, '');
+    } catch (error) {
+      message(loginMessage, `登入失敗：${/invalid login/i.test(error?.message || '') ? 'Email 或密碼錯誤。' : errorText(error)}`, 'error');
+    } finally {
+      loginFields.disabled = false;
+    }
+  });
+  logoutButton.addEventListener('click', async () => {
+    logoutButton.disabled = true;
+    await client.auth.signOut().catch(() => {});
+    logoutButton.disabled = false;
+  });
+  cancelEdit.addEventListener('click', () => { resetForm(); message(formMessage, ''); });
 
   form.addEventListener('change', event => {
     if (event.target === currencySelect) { store.set('currency', currencySelect.value); updateCurrency(); }
@@ -262,15 +370,22 @@
     if (converted === null || Math.abs(converted) > 10000000) return message(formMessage, '換算後的台幣金額須在 ±10,000,000 以內。', 'error');
     submitting = true;
     fields.disabled = true;
-    submit.textContent = '送出中…';
-    message(formMessage, '正在記錄…');
+    const updating = editingId;
+    submit.textContent = updating ? '儲存中…' : '送出中…';
+    message(formMessage, updating ? '正在儲存修改…' : '正在記錄…');
     try {
-      const { error } = await client.from('travel_expenses').insert(payload);
-      if (error) throw error;
+      if (updating) {
+        const { data, error } = await client.from('travel_expenses').update(payload).eq('id', updating).select('id');
+        if (error) throw error;
+        if (!data?.length) throw new Error('沒有修改任何資料，可能沒有編輯權限或資料已被刪除。');
+      } else {
+        const { error } = await client.from('travel_expenses').insert(payload);
+        if (error) throw error;
+      }
       selectedTrip = payload.trip_name;
       store.set('trip', selectedTrip);
       resetForm();
-      message(formMessage, `已記錄到「${payload.trip_name}」：${CURRENCY_NAMES[currency]} ${decimal.format(payload.amount)}，約 ${twd(converted)}。`, 'success');
+      message(formMessage, `${updating ? '已儲存修改' : `已記錄到「${payload.trip_name}」`}：${CURRENCY_NAMES[currency]} ${decimal.format(payload.amount)}，約 ${twd(converted)}。`, 'success');
       await loadEntries();
       updateCurrency();
     } catch (error) {
@@ -278,7 +393,7 @@
     } finally {
       submitting = false;
       fields.disabled = false;
-      submit.textContent = '記一筆 →';
+      submit.textContent = editingId ? '儲存修改' : SUBMIT_LABEL;
     }
   });
 
@@ -286,13 +401,16 @@
   resetForm();
   try {
     const config = window.LEDGER_CONFIG;
-    client = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
-    refresh.addEventListener('click', loadEntries);
+    client = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'travel-ledger-auth' } });
+    refresh.addEventListener('click', () => loadEntries());
+    // 登入狀態變化時（含頁面載入時還原的登入）更新權限；回呼內不直接 await 其他 Supabase 呼叫以免卡住。
+    client.auth.onAuthStateChange((_event, session) => { setTimeout(() => refreshAccount(session), 0); });
     loadEntries();
   } catch {
     refresh.disabled = true;
     tripView.replaceChildren(new Option('無法載入', ''));
     message(formMessage, '服務初始化失敗，請檢查網路連線後重新載入頁面。', 'error');
     message(listMessage, '目前無法讀取花費紀錄。', 'error');
+    loginToggle.hidden = true;
   }
 })();

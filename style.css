@@ -38,3 +38,11 @@
 .breakdown-empty{font-size:14px;color:#60746b}
 .card-foreign{font-size:13px;color:#4a6356;margin-top:6px}
 @media(max-width:600px){.breakdown-panel{padding:18px}.breakdown-row{grid-template-columns:72px 1fr;row-gap:2px}.breakdown-value{grid-column:2;font-size:13px}.twd-preview{padding:0}}
+.account{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:16px;font-size:13px}.account p{font-size:13px;overflow-wrap:anywhere}
+.login-panel{margin-top:12px}
+.form-buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.card-actions{display:flex;gap:8px;margin-top:12px}
+button.small{min-height:36px;padding:6px 14px;font-size:13px}
+.danger{color:#b42318;border-color:#efc5bf}.danger:hover{background:#fcece9}
+#pwa-message{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:600px){.account{align-items:flex-start}.form-buttons{flex-direction:column-reverse}.form-buttons button{width:100%}}

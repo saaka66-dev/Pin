@@ -19,7 +19,9 @@ python3 -m http.server 8000
 - 台幣金額由資料庫以 `round(金額 × 匯率)` 產生，前端無法指定；登記時間亦由資料庫產生。
 - 旅程統計：可切換旅程或「全部旅程」，顯示總花費、筆數、平均每天（第一筆到最後一筆日期的天數）與各類別花費長條圖。最多讀取最新 1,000 筆，超過時頁面會提示。
 - 花費紀錄：依日期由新到舊，可依類別篩選；外幣紀錄顯示原幣金額與匯率。
-- 不提供修改或刪除；退款（如退稅）或記錯時，輸入負數金額沖銷並於備註說明。
+- 登入：頁首「登入以編輯」以 Email＋密碼登入（Supabase Auth），裝置會記住登入狀態直到登出。帳號在編輯者名單內時，每筆紀錄顯示「編輯」與「刪除」；編輯沿用上方表單，刪除前會再確認。未登入時只能新增與查看。
+- 退款（如退稅）可輸入負數金額。
+- 有新版本時頁面上方顯示「立即更新」，按下即換成新版（手機與電腦都適用）。
 
 GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 分支及 `/ (root)`。預設網址為 https://saaka66-dev.github.io/Pin/ 。
 
@@ -28,6 +30,8 @@ GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 
 資料表 `travel_expenses` 的結構、限制與權限在 `supabase/schema.sql`，需由管理者在 Supabase SQL Editor 執行一次。舊版 `ledger_entries` 資料表不受影響，前端已不使用。
 
 - 啟用 RLS；公開金鑰（anon）僅能讀取與新增，不能修改或刪除。
+- `supabase/edit_permissions.sql`（在 `schema.sql` 之後執行）：建立編輯者名單 `travel_editors` 與函式 `is_travel_editor()`；登入者（authenticated）可讀取、新增，只有信箱在名單內的帳號能修改輸入欄位與刪除。名單前端讀不到，內容不放進版本庫，由管理者以 `INSERT INTO public.travel_editors (email) VALUES ('信箱')` 加入。
+- 編輯者帳號由管理者在 Supabase 後台 Authentication → Users → Add user 建立（勾選 Auto Confirm User）。
 - anon 只能寫入 `trip_name, expense_date, category, currency, amount, exchange_rate, payment_method, note`；`id`、`created_at`、`twd_amount` 由資料庫產生。
 - CHECK 限制：旅程名稱 1～50 字、類別與幣別選項、金額不為 0 且在 ±100,000,000 內、匯率 0～1,000 且新台幣必須為 1、換算台幣在 ±10,000,000 內、付款方式選項、備註 500 字內。
 - 示範資料公開可讀，請只使用虛構資料。
@@ -43,5 +47,7 @@ GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 
 - `node --check app.js` 通過。
 - 2026-11-16 已於實際 Supabase 專案執行 `schema.sql`（RLS 已啟用）。
 - Chromium 連線實際 Supabase，於旅程「測試 東京五日遊（虛構）」新增三筆虛構花費：機票 NT$15,800、飯店 JPY 36,000 × 0.21 = NT$7,560、吃飯 JPY 1,280（匯率自動帶入 0.21）= NT$269；總花費 NT$23,629、3 筆、各類別占比正確；「飯店」篩選只顯示 1 筆；390px 寬度無水平捲動；無主控台錯誤。
-- 以公開金鑰驗證：修改與刪除皆被拒（permission denied）；指定 `twd_amount` 被拒（generated column）；新台幣匯率非 1 被 CHECK 擋下。上述三筆測試資料因前端無法刪除而保留。
-- 截圖：`docs/travel-mobile.png`、`docs/travel-desktop.png`。
+- 以公開金鑰驗證：修改與刪除皆被拒（permission denied）；指定 `twd_amount` 被拒（generated column）；新台幣匯率非 1 被 CHECK 擋下。上述三筆測試資料之後已由管理者刪除。
+- 截圖：`docs/travel-mobile.png`、`docs/travel-desktop.png`、`docs/travel-edit-list.png`。
+- 編輯權限（2026-11-16，於實際資料庫以交易測試後回滾）：名單內帳號可修改、刪除；名單外的登入者修改、刪除皆影響 0 筆；登入者讀不到名單；anon 無法呼叫 `is_travel_editor()`、無法刪除。
+- 編輯畫面以 Chromium 模擬登入與資料（不連線資料庫）驗證：未登入不顯示按鈕；登入後編輯會帶入原值、送出 PATCH 只含八個輸入欄位、統計更新；刪除確認後送出 DELETE；取消編輯恢復新增模式；登出後按鈕消失；390px 無水平捲動。
