@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "記帳本",
-  "short_name": "記帳本",
-  "description": "記錄每筆收入與支出，查看本月收支統計。",
+  "name": "旅遊記帳本",
+  "short_name": "旅遊記帳",
+  "description": "記錄旅途中機票、飯店、交通、吃飯、買東西等花費，外幣自動換算台幣。",
   "lang": "zh-Hant",
   "start_url": "./index.html",
   "scope": "./",
