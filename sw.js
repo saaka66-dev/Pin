@@ -1,7 +1,8 @@
 'use strict';
 // Bump this version whenever the application shell changes.
+// Prefix kept from the earlier repair app so its old caches are cleaned up on activate.
 const CACHE_PREFIX = `repair-shell:${self.registration.scope}:`;
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 const SHELL = ['index.html', 'style.css', 'app.js', 'config.js', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 const assetUrls = new Set(SHELL.map(path => new URL(path, self.registration.scope).href));
 const SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';

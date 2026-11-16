@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "報修登記",
-  "short_name": "報修登記",
-  "description": "登記報修並查看最近的報修紀錄。",
+  "name": "記帳本",
+  "short_name": "記帳本",
+  "description": "記錄每筆收入與支出，查看本月收支統計。",
   "lang": "zh-Hant",
   "start_url": "./index.html",
   "scope": "./",

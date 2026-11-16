@@ -6,7 +6,7 @@
   let installPrompt;
   function updateConnection() {
     connectionMessage.hidden = navigator.onLine;
-    connectionMessage.textContent = navigator.onLine ? '' : '目前離線：可開啟已快取的頁面，但無法送出或更新清單。填寫內容不會自動補送，關閉或重新載入會遺失。';
+    connectionMessage.textContent = navigator.onLine ? '' : '目前離線：可開啟已快取的頁面，但無法記帳或更新清單。填寫內容不會自動補送，關閉或重新載入會遺失。';
   }
   updateConnection();
   window.addEventListener('online', updateConnection);
@@ -35,7 +35,7 @@
       try {
         const registration = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
         const showUpdate = () => {
-          pwaMessage.textContent = '新版本已備妥。請先完成目前填寫，再關閉所有報修頁面並重新開啟以更新。';
+          pwaMessage.textContent = '新版本已備妥。請先完成目前填寫，再關閉所有記帳頁面並重新開啟以更新。';
           pwaMessage.hidden = false;
         };
         if (registration.waiting) showUpdate();
