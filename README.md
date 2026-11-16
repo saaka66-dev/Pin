@@ -43,5 +43,5 @@ GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 
 
 - `node --check app.js` 通過。
 - Chromium 以本機假 Supabase（不連線資料庫）驗證：切換收入／支出時類別選項正確；送出一筆虛構支出，寫入內容只含六個輸入欄位、顯示成功訊息、表單重設；本月統計正確更新；「收入」篩選只顯示收入；390px 寬度無水平捲動。
-- 尚未對實際 Supabase 執行 `schema.sql`，亦未驗證線上 RLS 與寫入。
+- 2026-11-16 已於實際 Supabase 專案執行 `schema.sql`（RLS 已啟用）。以公開金鑰驗證：新增一筆虛構支出成功，讀回含系統產生的登記時間；修改與刪除皆被拒（permission denied）；金額 0 被 CHECK 擋下。該筆測試資料（備註「測試資料（虛構）」）因前端無法刪除而保留。
 - 截圖：`docs/ledger-mobile.png`、`docs/ledger-desktop.png`。
