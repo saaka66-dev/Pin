@@ -322,7 +322,27 @@
       loginForm.reset();
       message(loginMessage, '');
     } catch (error) {
-      message(loginMessage, `登入失敗：${/invalid login/i.test(error?.message || '') ? 'Email 或密碼錯誤。' : errorText(error)}`, 'error');
+      const text = error?.message || '';
+      message(loginMessage, `登入失敗：${/invalid login/i.test(text) ? 'Email 或密碼錯誤。' : /not confirmed/i.test(text) ? '帳號尚未啟用，請等管理者啟用後再試。' : errorText(error)}`, 'error');
+    } finally {
+      loginFields.disabled = false;
+    }
+  });
+  document.querySelector('#signup-button').addEventListener('click', async () => {
+    if (!client) return;
+    const email = loginForm.elements.email.value.trim();
+    const password = loginForm.elements.password.value;
+    if (!loginForm.elements.email.checkValidity() || !email) return message(loginMessage, '請輸入正確的 Email。', 'error');
+    if (password.length < 8) return message(loginMessage, '密碼至少 8 碼。', 'error');
+    loginFields.disabled = true;
+    message(loginMessage, '建立帳號中…');
+    try {
+      const { data, error } = await client.auth.signUp({ email, password });
+      if (error) throw error;
+      loginForm.elements.password.value = '';
+      message(loginMessage, data.session ? '帳號已建立並登入。' : '帳號已建立！請等管理者啟用（或點信箱中的確認信），之後用同一組 Email 與密碼登入。', 'success');
+    } catch (error) {
+      message(loginMessage, `建立帳號失敗：${/already registered/i.test(error?.message || '') ? '這個 Email 已有帳號，請直接登入。' : errorText(error)}`, 'error');
     } finally {
       loginFields.disabled = false;
     }

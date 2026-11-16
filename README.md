@@ -31,7 +31,7 @@ GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 
 
 - 啟用 RLS；公開金鑰（anon）僅能讀取與新增，不能修改或刪除。
 - `supabase/edit_permissions.sql`（在 `schema.sql` 之後執行）：建立編輯者名單 `travel_editors` 與函式 `is_travel_editor()`；登入者（authenticated）可讀取、新增，只有信箱在名單內的帳號能修改輸入欄位與刪除。名單前端讀不到，內容不放進版本庫，由管理者以 `INSERT INTO public.travel_editors (email) VALUES ('信箱')` 加入。
-- 編輯者帳號由管理者在 Supabase 後台 Authentication → Users → Add user 建立（勾選 Auto Confirm User）。
+- 編輯者帳號：使用者在網頁登入區輸入 Email 與自訂密碼按「建立帳號」（Supabase signUp），再由管理者啟用（確認信或 SQL 設定 `email_confirmed_at`）；也可在 Supabase 後台 Authentication → Users → Add user 建立（勾選 Auto Confirm User）。只有信箱在 `travel_editors` 名單內的帳號能修改或刪除。
 - anon 只能寫入 `trip_name, expense_date, category, currency, amount, exchange_rate, payment_method, note`；`id`、`created_at`、`twd_amount` 由資料庫產生。
 - CHECK 限制：旅程名稱 1～50 字、類別與幣別選項、金額不為 0 且在 ±100,000,000 內、匯率 0～1,000 且新台幣必須為 1、換算台幣在 ±10,000,000 內、付款方式選項、備註 500 字內。
 - 示範資料公開可讀，請只使用虛構資料。
