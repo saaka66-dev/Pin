@@ -35,9 +35,30 @@
       try {
         const registration = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
         const showUpdate = () => {
-          pwaMessage.textContent = '新版本已備妥。請先完成目前填寫，再關閉所有記帳頁面並重新開啟以更新。';
+          pwaMessage.replaceChildren('有新版本可以使用。', updateButton);
           pwaMessage.hidden = false;
         };
+        const updateButton = document.createElement('button');
+        updateButton.type = 'button';
+        updateButton.className = 'secondary small';
+        updateButton.textContent = '立即更新';
+        updateButton.addEventListener('click', () => {
+          const editing = document.querySelector('#entry-form')?.elements.amount?.value;
+          if (editing && !window.confirm('表單中尚未送出的內容會清除，確定要立即更新嗎？')) return;
+          updateButton.disabled = true;
+          registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+        });
+        let reloading = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloading || !updateButton.disabled) return;
+          reloading = true;
+          window.location.reload();
+        });
+        // 每次開啟與回到前景時檢查是否有新版本。
+        registration.update().catch(() => {});
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') registration.update().catch(() => {});
+        });
         if (registration.waiting) showUpdate();
         registration.addEventListener('updatefound', () => {
           const worker = registration.installing;

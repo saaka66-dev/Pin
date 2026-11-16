@@ -2,7 +2,7 @@
 // Bump this version whenever the application shell changes.
 // Prefix kept from the earlier repair app so its old caches are cleaned up on activate.
 const CACHE_PREFIX = `repair-shell:${self.registration.scope}:`;
-const CACHE_NAME = `${CACHE_PREFIX}v3`;
+const CACHE_NAME = `${CACHE_PREFIX}v4`;
 const SHELL = ['index.html', 'style.css', 'app.js', 'config.js', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 const assetUrls = new Set(SHELL.map(path => new URL(path, self.registration.scope).href));
 const SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
@@ -15,6 +15,10 @@ self.addEventListener('install', event => {
       if (response.ok) await cache.put(SDK_URL, response);
     } catch { /* The app displays its existing initialization error if SDK is unavailable. */ }
   }));
+});
+// 頁面按「立即更新」時，讓等待中的新版本立即接手。
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
