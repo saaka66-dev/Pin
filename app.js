@@ -209,13 +209,13 @@
       const time = Number.isNaN(created.getTime()) ? '時間未知' : created.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
       const trip = selectedTrip === ALL_TRIPS ? `${entry.trip_name} · ` : '';
       card.append(element('p', 'card-meta', `${trip}${entry.expense_date} · 登記於 ${time}（台北時間）`));
-      if (canEdit) {
+      {
         const actions = element('div', 'card-actions', '');
         const edit = element('button', 'secondary small', '編輯');
         const remove = element('button', 'secondary small danger', '刪除');
         edit.type = remove.type = 'button';
-        edit.addEventListener('click', () => startEdit(entry));
-        remove.addEventListener('click', () => deleteEntry(entry, remove));
+        edit.addEventListener('click', () => (canEdit ? startEdit(entry) : askLogin()));
+        remove.addEventListener('click', () => (canEdit ? deleteEntry(entry, remove) : askLogin()));
         actions.append(edit, remove);
         card.append(actions);
       }
@@ -306,6 +306,17 @@
     if (email) loginForm.hidden = true;
     if (!canEdit && editingId) resetForm();
     applyView();
+  }
+  // 未登入時按「編輯」或「刪除」：打開登入區並說明。
+  function askLogin() {
+    if (!logoutButton.hidden) {
+      message(listMessage, '這個帳號不在編輯者名單內，無法修改或刪除。', 'error');
+      return;
+    }
+    loginForm.hidden = false;
+    message(loginMessage, '要修改或刪除，請先登入。第一次使用請輸入 Email 與自訂密碼（至少 8 碼），按「建立帳號」。');
+    loginForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    loginForm.elements.email.focus({ preventScroll: true });
   }
   loginToggle.addEventListener('click', () => {
     loginForm.hidden = !loginForm.hidden;
