@@ -46,11 +46,16 @@
           const editing = document.querySelector('#entry-form')?.elements.amount?.value;
           if (editing && !window.confirm('表單中尚未送出的內容會清除，確定要立即更新嗎？')) return;
           updateButton.disabled = true;
-          registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          else window.location.reload();
         });
         let reloading = false;
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        // 新版本接手後自動重新載入；第一次安裝或表單有未送出的金額時不自動載入，改顯示「立即更新」。
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (reloading || !updateButton.disabled) return;
+          if (reloading || !hadController) return;
+          const draft = document.querySelector('#entry-form')?.elements.amount?.value;
+          if (draft && !updateButton.disabled) { showUpdate(); return; }
           reloading = true;
           window.location.reload();
         });
