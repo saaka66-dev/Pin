@@ -41,7 +41,7 @@ GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 
 
 - `manifest.webmanifest`、`pwa.js`、`sw.js` 與 `icons/` 提供安裝與頁面快取，路徑皆為相對路徑，支援 GitHub Pages 的 `/Pin/` 子路徑。
 - 離線只能開啟已快取的頁面；記帳資料不快取、不離線儲存、不補送。
-- 變更頁面資源時須提升 `sw.js` 的快取版本（目前 v2；沿用舊前綴以清除報修版快取）。
+- 變更頁面資源時須提升 `sw.js` 的快取版本（目前 v8；沿用舊前綴以清除報修版快取）。
 
 ## 驗證紀錄
 
