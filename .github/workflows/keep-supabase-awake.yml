@@ -1,0 +1,28 @@
+# 每 3 天讀取一次資料庫，避免 Supabase 免費專案因 7 天未使用而自動暫停。
+# 只用公開金鑰（與 config.js 相同）讀取 1 筆 id，不修改任何資料。
+name: 保持資料庫啟用
+
+on:
+  schedule:
+    - cron: '17 3 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 讀取一筆資料
+        run: |
+          url=$(grep -oP "supabaseUrl: '\K[^']+" config.js)
+          key=$(grep -oP "supabasePublishableKey: '\K[^']+" config.js)
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 10 \
+            "$url/rest/v1/travel_expenses?select=id&limit=1" -H "apikey: $key")
+          echo "HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::資料庫沒有回應（HTTP $code），可能已被暫停，請到 Supabase 後台按 Restore project。"
+            exit 1
+          fi

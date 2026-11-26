@@ -36,6 +36,7 @@ GitHub Pages：在 Settings → Pages 選擇「Deploy from a branch」、`main` 
 - anon 只能寫入 `trip_name, expense_date, category, currency, amount, exchange_rate, payment_method, note`；`id`、`created_at`、`twd_amount` 由資料庫產生。
 - CHECK 限制：旅程名稱 1～50 字、類別與幣別選項、金額不為 0 且在 ±100,000,000 內、匯率 0～1,000 且新台幣必須為 1、換算台幣在 ±10,000,000 內、付款方式選項、備註 500 字內。
 - 示範資料公開可讀，請只使用虛構資料。
+- 免費方案專案約 7 天未使用會自動暫停，網頁會無法載入。`.github/workflows/keep-supabase-awake.yml` 每 3 天以公開金鑰讀取 1 筆資料保持啟用（須在 `main` 分支才會依排程執行）；若仍被暫停，到 Supabase 後台按 Restore project。2026-11-26 曾因暫停無法載入，恢復後資料完整。
 
 ## PWA 安裝與離線使用
 
